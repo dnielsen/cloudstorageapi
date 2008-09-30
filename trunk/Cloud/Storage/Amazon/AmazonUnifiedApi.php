@@ -36,8 +36,7 @@ class Cloud_Storage_Amazon implements Cloud_Storage_Unified_Interface
 
     public function __construct($credential, $defaultBucketName=null)
     {
-      // $this->debug = FALSE;
-      $this->debug = TRUE;
+      $this->debug = FALSE;
 
       if (strlen($credential[self::CREDENTIAL_AWS_SECRET]) != self::CREDENTIAL_AWS_SECRET_LENGTH) {
         die(self::CREDENTIAL_AWS_SECRET." should be exactly "
@@ -153,32 +152,6 @@ class Cloud_Storage_Amazon implements Cloud_Storage_Unified_Interface
         return sha1($d, true); 
     } // _binSha1
 
-    /* See the verification test at 
-       http://docs.amazonwebservices.com/AmazonS3/2006-03-01/index.html?RESTAuthentication.html
-     */
-    private function unitTestHmac() {
-        /* save */
-        $aws_key = $this->aws_key;
-        $aws_secret = $this->aws_secret;
-
-        $this->aws_key = '0PN5J17HBGZHT7JJ3X82';
-        $this->aws_secret = 'uV3F3YluFJax1cknvbcGwgjvx4QpvB+leU8dUj2o';
-
-        $stringToSign = "GET\n\n\nTue, 27 Mar 2007 19:36:42 +0000\n/johnsmith/photos/puppy.jpg";
-        $generatedSignature = $this->_hmac($stringToSign);
-        $correctSignature = '0PN5J17HBGZHT7JJ3X82:xXjDGYUmKxnwqr5KXNPGldn5LbA=';
-
-        /* restore */
-        $this->aws_key = $aws_key;
-        $this->aws_secret = $aws_secret;
-
-        if ($generatedSignature == $correctSignature) {
-            return(TRUE);
-        } else {
-            return(FALSE);
-        }
-    } // unitTestHmac
-
     private function _hmac($stringToSign) 
     {
         /* http://en.wikipedia.org/wiki/HMAC. */
@@ -197,7 +170,7 @@ class Cloud_Storage_Amazon implements Cloud_Storage_Unified_Interface
     } // _hmac
 
     private function _execute($httpVerb, $amzHeaders, $filePath, $contentsInMemory, $mimeType,
-      $bucketName)
+      $containerName)
     {
         if (is_null($httpVerb)) return(false);
 
@@ -212,7 +185,7 @@ class Cloud_Storage_Amazon implements Cloud_Storage_Unified_Interface
         $dt = gmdate('r');
 
 	$contentMd5 = null;
-        $fullFilePath = '/'.$bucketName;
+        $fullFilePath = '/'.$containerName;
         if (!empty($filePath)) {
           if (substr($filePath, 0, 1) != '/') {
             $fullFilePath .= '/';
@@ -248,9 +221,11 @@ class Cloud_Storage_Amazon implements Cloud_Storage_Unified_Interface
         return($resp);
     } // _execute
 
-    public function listAllBuckets() {
+    public function listAllContainers() {
         $resp = $this->_execute('GET', null, null, null, null, null);
 /*
+$resp returns something like this:
+
 $resp =(
  [error] => 
  [code] => 200 
@@ -259,17 +234,17 @@ $resp =(
  )
  [body] => SimpleXMLElement Object (
   [Owner] => SimpleXMLElement Object (
-   [ID] => e33b4ef33b4b8afdc3e975d885512de77cdc469012d5fd60aa315c1385fb5f3a 
+   [ID] => e33b4ef33bzzzzzzzzzzzzz885512de77cdc469012d5fd60aa315c1385555555 
    [DisplayName] => userName
   )
   [Buckets] => SimpleXMLElement Object (
    [Bucket] => Array (
     [0] => SimpleXMLElement Object (
-     [Name] => alt-test 
+     [Name] => bucket1
      [CreationDate] => 2008-03-22T10:55:19.000Z 
     )
     [1] => SimpleXMLElement Object (
-     [Name] => test-by-alt 
+     [Name] => bucket2
      [CreationDate] => 2008-03-22T10:50:29.000Z 
     )
    )
@@ -285,20 +260,22 @@ $resp =(
           $returnArray[] = (string) $bucket->Name;
         } // foreach
         return($returnArray);
-    } // listAllBuckets
+    } // listAllContainers
 
     public function uploadContents($filePath, $contentsInMemory, $mimeType=null,
-      $bucketName=null)
+      $containerName=null)
     {
         $amzHeaders = Array();
         $amzHeaders[] = self::X_AMZ_ACL;
-        $resp = $this->_execute('PUT', $amzHeaders, $filePath, $contentsInMemory, $mimeType, $bucketName);
+        $resp = $this->_execute('PUT', $amzHeaders, $filePath, $contentsInMemory, $mimeType, $containerName);
 /*
+$resp returns something like this:
+
 Object (
  [error] =>
  [code] => 200
  [headers] => Array (
-  [hash] => 7da19e7fe34e2a175491b3752b732f5b
+  [hash] => 7da19e7fe34e2a17zzzzzzzz2b732f5b
   [size] => 0 
  )
 )
@@ -307,18 +284,20 @@ Object (
     } // uploadContents
 
     public function downloadContents($filePath, $expiration=null,
-      $bucketName=null)
+      $containerName=null)
     {
-        $resp = $this->_execute('GET', null, $filePath, null, null, $bucketName);
+        $resp = $this->_execute('GET', null, $filePath, null, null, $containerName);
 /*
+$resp returns something like this:
+
 $resp = (
  [error] => 
  [code] => 200 
  [headers] => Array (
-  [time] => 1220308056
-  [hash] => 7da19e7fe34e2a175491b3752b732f5b
+  [time] => 1220307156
+  [hash] => 7da19e7zzzzzzzzzzz91b3752b732f5b
   [type] => application/octet-stream
-  [size] => 24 
+  [size] => 240
  )
  [body] => data line 1 data line 2 
 )
@@ -329,28 +308,32 @@ $resp = (
       return($resp->body);
     } // downloadContents
 
-    public function getContentsMetaData($filePath, $bucketName=null)
+    public function getContentsMetaData($filePath, $containerName=null)
     {
-        $resp = $this->_execute('HEAD', null, $filePath, null, null, $bucketName);
+        $resp = $this->_execute('HEAD', null, $filePath, null, null, $containerName);
 /*
+$resp returns something like this:
+
 $resp = (
  [error] =>
  [code] => 200
  [headers] => Array (
-  [time] => 1220308056
-  [hash] => 7da19e7fe34e2a175491b3752b732f5b
+  [time] => 1220307156
+  [hash] => 7da19e7zzzzzzzzzzz91b3752b732f5b
   [type] => application/octet-stream
-  [size] => 24 
+  [size] => 240
  )
 )
  */
         return($resp->headers);
     } // getContentsMetaData
 
-    public function deleteContents($filePath, $bucketName=null)
+    public function deleteContents($filePath, $containerName=null)
     {
-        $resp = $this->_execute('DELETE', null, $filePath, null, null, $bucketName);
+        $resp = $this->_execute('DELETE', null, $filePath, null, null, $containerName);
 /*
+$resp returns something like this:
+
 $resp = (
  [error] =>
  [code] => 200

@@ -20,14 +20,41 @@ interface Cloud_Storage_Unified_Interface
 
     public function __construct($credential, $defaultBucketName=null);
 
-    public function listAllBuckets();
+/**
+    listAllContainers retrieves a list of all top-level containers and returns 
+      an in-memory Array of names.
+ */
+    public function listAllContainers();
 
-    public function uploadContents($filePath, $contentsInMemory, $mimeType=null, $bucketName=null);
+/**
+    uploadContents uploads contents stored in memory in $contentsInMemory
+      to a file on the storage network under the path $filePath.
+      $mimeType is the mime type of the contents.
+      $containerName is an optional parameter for Amazon S3.
+      It returns null on success.
+ */
+    public function uploadContents($filePath, $contentsInMemory, $mimeType=null, $containerName=null);
 
-    public function downloadContents($filePath, $expiration=null, $bucketName=null);
+/**
+    downloadContents downloads a file stored on the storage network under 
+      the path $filePath, stores the contents into a memory buffer and returns.
+      $expiration is an optional parameter for Nirvanix.
+      $containerName is an optional parameter for Amazon S3.
+ */
+    public function downloadContents($filePath, $expiration=null, $containerName=null);
 
-    public function getContentsMetaData($filePath, $bucketName=null);
+/**
+    getContentsMetaData retrieves the meta-data of a file stored on the 
+      storage network under the path $filePath and returns the meta-data as 
+      an in-memory structure.  The meta-data contents are specific to each 
+      storage network.
+ */
+    public function getContentsMetaData($filePath, $containerName=null);
 
-    public function deleteContents($filePath, $bucketName=null);
+/**
+    deleteContents deletes a file stored on the storage network under 
+      the path $filePath.  It returns null on success.
+ */
+    public function deleteContents($filePath, $containerName=null);
 
 } // Cloud_Storage_Unified_Interface

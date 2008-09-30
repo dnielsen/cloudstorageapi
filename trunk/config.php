@@ -18,7 +18,7 @@
 /* config.php */
 class Config
 {
-const PARAM_BUCKET = 'bucket';
+const PARAM_CONTAINER = 'container';
 const PARAM_CONTENT_FILE = "content";
 const PARAM_FILE_PATH = "filePath";
 const PARAM_TARGET_SYSTEM = "target";
