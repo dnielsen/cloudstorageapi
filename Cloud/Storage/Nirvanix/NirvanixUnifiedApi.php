@@ -48,7 +48,7 @@ class Cloud_Storage_Nirvanix implements Cloud_Storage_Unified_Interface
       } // if
     } // _reportError
 
-    public function listAllBuckets() {
+    public function listAllContainers() {
       $params = array(
         'folderPath' => '/',
         'pageNumber' => 1,
@@ -61,11 +61,11 @@ class Cloud_Storage_Nirvanix implements Cloud_Storage_Unified_Interface
         $resp = $this->imfs->listFolder($params);
         $respCode = $resp->ResponseCode;
         if ($resp->ResponseCode != 0) {
-          throw new Cloud_Storage_Exception('listAllBuckets error',
+          throw new Cloud_Storage_Exception('listAllContainers error',
             $resp->ResponseCode);
         } // if
       } catch (Zend_Exception $e) {
-        $this->_reportError('listAllBuckets', $e);
+        $this->_reportError('listAllContainers', $e);
         throw $e;
       }
 
@@ -80,14 +80,16 @@ class Cloud_Storage_Nirvanix implements Cloud_Storage_Unified_Interface
          $returnArray[] = (string) $folder->Name;
        } // foreach
        return($returnArray);
-    } // listAllBuckets
+    } // listAllContainers
 
     public function uploadContents($filePath, $contentsInMemory, $mimeType=null,
-      $bucketName=null)
+      $containerName=null)
     {
       try {
         $resp= $this->imfs->putContents($filePath, $contentsInMemory, $mimeType);
 /*
+$resp has this data structure:
+
 Zend_Service_Nirvanix_Response Object (
  [_sxml:protected] => SimpleXMLElement Object (
   [ResponseCode] => 0
@@ -108,7 +110,7 @@ Zend_Service_Nirvanix_Response Object (
     } // uploadContents
 
     public function downloadContents($filePath, $expiration=null,
-      $bucketName=null)
+      $containerName=null)
     {
       if (is_null($expiration)) {
           $expiration = self::DEFAULT_DOWNLOAD_EXPIRATION;
@@ -127,12 +129,14 @@ Zend_Service_Nirvanix_Response Object (
       }
     } // downloadContents
 
-    public function getContentsMetaData($filePath, $bucketName=null)
+    public function getContentsMetaData($filePath, $containerName=null)
     {
       $params = array('path' => $filePath);
       try {
         $resp = $this->metadata->GetMetadata($params);
 /*
+$resp has this data structure:
+
 Zend_Service_Nirvanix_Response Object (
  [_sxml:protected] => SimpleXMLElement Object (
   [ResponseCode] => 0
@@ -154,12 +158,17 @@ Zend_Service_Nirvanix_Response Object (
       }
     } // getContentsMetaData
 
-    public function deleteContents($filePath, $bucketName=null)
+    public function deleteContents($filePath, $containerName=null)
     {
-      $params = array('filePath' => $filePath);
       try {
-        $resp = $this->imfs->deleteFiles($params);
+        If (is_array($filePath)) {
+          $resp = $this->imfs->deleteFiles($filePath);
+        } else {
+          $resp = $this->imfs->deleteFiles(Array('filePath' => $filePath));
+        } // else
 /*
+$resp has this data structure:
+
 Zend_Service_Nirvanix_Response Object (
  [_sxml:protected] => SimpleXMLElement Object (
   [ResponseCode] => 0 

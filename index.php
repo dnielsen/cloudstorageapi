@@ -44,7 +44,7 @@ E.g.: /folder2/test2.txt
 
 <tr>
 <td align="right">Bucket:</td>
-<td align="left"><input type="input" size="50" name="<?=Config::PARAM_BUCKET?>" value="<?=Config::AMAZON_DEFAULT_BUCKET?>"/></td>
+<td align="left"><input type="input" size="50" name="<?=Config::PARAM_CONTAINER?>" value="<?=Config::AMAZON_DEFAULT_BUCKET?>"/></td>
 </tr>
 
 <tr>
